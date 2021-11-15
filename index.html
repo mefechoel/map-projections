@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>Scale</title>
+	</head>
+	<body>
+		<canvas width="960" height="600"></canvas>
+		<label>
+			<br />
+			X
+			<input
+				id="slider-x"
+				step="0.01"
+				type="range"
+				min="0"
+				max="1"
+				value="0.93"
+			/>
+		</label>
+		<label>
+			<br />
+			Y
+			<input
+				id="slider-y"
+				step="0.01"
+				type="range"
+				min="0"
+				max="1"
+				value="0.55"
+			/>
+		</label>
+		<label>
+			<br />
+			Z
+			<input id="slider-z" step="0.01" type="range" min="0" max="1" value="0" />
+		</label>
+		<label>
+			<br />
+			Scale
+			<input
+				id="slider-scale"
+				step="0.01"
+				type="range"
+				min="0"
+				max="1"
+				value="0"
+			/>
+		</label>
+
+		<script src="./src/index.ts" type="module"></script>
+	</body>
+</html>
