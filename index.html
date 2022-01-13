@@ -7,48 +7,75 @@
 		<title>Scale</title>
 	</head>
 	<body>
+		<style>
+			html,
+			body {
+				padding: 0;
+				margin: 0;
+				/* overflow: hidden; */
+			}
+			.sliders {
+				position: fixed;
+				bottom: 0;
+				left: 0;
+				padding: 1em;
+			}
+		</style>
+
 		<canvas width="960" height="600"></canvas>
-		<label>
-			<br />
-			X
-			<input
-				id="slider-x"
-				step="0.01"
-				type="range"
-				min="0"
-				max="1"
-				value="0.93"
-			/>
-		</label>
-		<label>
-			<br />
-			Y
-			<input
-				id="slider-y"
-				step="0.01"
-				type="range"
-				min="0"
-				max="1"
-				value="0.55"
-			/>
-		</label>
-		<label>
-			<br />
-			Z
-			<input id="slider-z" step="0.01" type="range" min="0" max="1" value="0" />
-		</label>
-		<label>
-			<br />
-			Scale
-			<input
-				id="slider-scale"
-				step="0.01"
-				type="range"
-				min="0"
-				max="1"
-				value="0"
-			/>
-		</label>
+		<svg width="960" height="600" viewBox="0 0 960 600" id="svg"></svg>
+		<div id="svg-wrapper"></div>
+		<div class="sliders">
+			<label>
+				<br />
+				X
+				<input
+					id="slider-x"
+					step="0.01"
+					type="range"
+					min="0"
+					max="1"
+					value="0.93"
+				/>
+			</label>
+			<label>
+				<br />
+				Y
+				<input
+					id="slider-y"
+					step="0.01"
+					type="range"
+					min="0"
+					max="1"
+					value="0.55"
+				/>
+			</label>
+			<label>
+				<br />
+				Z
+				<input
+					id="slider-z"
+					step="0.01"
+					type="range"
+					min="0"
+					max="1"
+					value="0"
+				/>
+			</label>
+			<label>
+				<br />
+				Scale
+				<input
+					id="slider-scale"
+					step="0.01"
+					type="range"
+					min="0"
+					max="1"
+					value="0"
+				/>
+			</label>
+			<button id="download" type="button">Download</button>
+		</div>
 
 		<script src="./src/index.ts" type="module"></script>
 	</body>

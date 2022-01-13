@@ -1,23 +1,48 @@
-import { fromEvent, map, Observable, merge, of, scan } from "rxjs";
+import type { Observable } from "rxjs";
+import { animationFrames, fromEvent, map, merge, of, scan } from "rxjs";
 import { geoMercator, geoPath } from "d3-geo";
-import world from "world-atlas/countries-110m.json";
+// import world from "world-atlas/countries-110m.json";
+import world from "sane-topojson/dist/world_110m.json";
 import { feature } from "topojson-client";
 import { simplify, presimplify } from "topojson-simplify";
-import { Objects, Topology } from "topojson-specification";
+import type { Objects, Topology } from "topojson-specification";
+import { downloadString } from "./helpers";
 
 type Vec3 = [number, number, number];
 
 const $ = document.querySelector.bind(document);
-const ACCURACY = 0.2;
+const ACCURACY = 0;
 const projectionFn = geoMercator;
 const rotationVector: Vec3 = [0, 0, 0];
 
 async function main() {
+	const svgElem: SVGSVGElement | null = $("#svg");
+	let svgStr = "";
 	const canvas: HTMLCanvasElement | null = $("canvas");
+	const downloadButton: HTMLButtonElement | null = $("#download");
+	const svgWrapper: HTMLDivElement | null = $("#svg-wrapper");
 	const ctx = canvas?.getContext("2d");
-	if (!canvas || !ctx) return;
+	if (!canvas || !ctx || !svgElem || !svgWrapper) {
+		throw new Error("Could not find canvas or svg");
+	}
+
+	const width = window.innerWidth;
+	const height = window.innerHeight;
+	canvas.width = width;
+	canvas.height = height;
 	const canvasWidth = canvas.width;
 	const canvasHeight = canvas.height;
+
+	svgElem.setAttribute("width", width + "");
+	svgElem.setAttribute("height", height + "");
+	svgElem.setAttribute("viewbox", `0 0 ${width} ${height}`);
+	svgElem.style.setProperty("display", "none");
+
+	console.log(downloadButton);
+
+	downloadButton?.addEventListener("click", () =>
+		downloadString(svgStr, "image/svg+xml", "map.svg"),
+	);
 
 	const projection = projectionFn()
 		.rotate(rotationVector)
@@ -25,27 +50,92 @@ async function main() {
 			type: "Sphere",
 		});
 
-	const geoPathGenerator = geoPath()
+	const canvasGeoPathGenerator = geoPath()
 		.projection(projection)
 		.context(ctx)
 		.pointRadius(1.5);
+	const svgGeoPathGenerator = geoPath().projection(projection).pointRadius(1.5);
 
 	// eslint-disable-next-line @typescript-eslint/ban-types
 	const topologyJson = world as unknown as Topology<Objects<{}>>;
+
+	// const country
+	function filterCountry(code: string) {
+		(topologyJson.objects.countries as any).geometries = (
+			topologyJson.objects.countries as any
+		).geometries.filter((g: { id: string }) => g.id === code);
+	}
+	filterCountry("RUS");
+
 	let topology = presimplify(topologyJson);
 	topology = simplify(topology, ACCURACY);
-	const worldGeoJson = feature(topology, topology.objects.land);
+	// console.log(topologyJson);
+
+	const worldGeoJson = feature(topology, topology.objects.countries);
 
 	const draw = (rotation = rotationVector, scale = 1) => {
-		ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+		const width = window.innerWidth;
+		const height = window.innerHeight;
+		// canvas.width = width;
+		// canvas.height = height;
+
+		ctx.clearRect(0, 0, width, height);
 
 		projection.rotate(rotation);
 		projection.scale(scale);
+		// projection.fitSize([width, height], {
+		// 	type: "Sphere",
+		// });
 
 		ctx.beginPath();
-		ctx.strokeStyle = "deeppink";
+		ctx.strokeStyle = "hotpink";
 		ctx.fillStyle = "#7a6";
-		geoPathGenerator(worldGeoJson);
+		ctx.fillStyle = "transparent";
+		canvasGeoPathGenerator(worldGeoJson);
+		const svg = svgGeoPathGenerator(worldGeoJson);
+		const geometry = `
+			<g class="countries">
+				<path
+					id="svg-path"
+					d="${svg}"
+					class="svg-path"
+					fill="transparent"
+					stroke="hotpink"
+					strokeWidth="1.5"
+				/>
+			</g>`;
+		svgStr = `
+			<svg
+				xmlns="http://www.w3.org/2000/svg"
+				width="${width}"
+				height="${height}"
+				viewBox="0 0 ${width} ${height}"
+			>
+				${geometry}
+			</svg>
+		`;
+		svgWrapper.innerHTML = svgStr;
+		const path = $("#svg-path") as SVGPathElement;
+		const bbox = path.getBBox();
+		const centerX = (width - bbox.width) * 0.5;
+		const centerY = (height - bbox.height) * 0.5;
+		const deltaX = centerX - bbox.x;
+		const deltaY = centerY - bbox.y;
+		const size = width * height;
+		const boxSize = bbox.width * bbox.height;
+		const aspectRatio = bbox.width / bbox.height;
+		const targetRatio = 0.8;
+		const sizeRatio = (targetRatio * boxSize) / size;
+		const targetWidth = targetRatio * width;
+		const targetHeight = targetRatio * height;
+		const targetSize = targetWidth * targetHeight;
+		const scaleRatio = 1; // boxSize / targetSize;
+		path.style.setProperty(
+			"transform",
+			`scale(${scaleRatio}) translate(${deltaX}px, ${deltaY}px)`,
+		);
+		// console.log(scaleRatio);
+
 		ctx.fill();
 		ctx.stroke();
 		ctx.closePath();
@@ -71,7 +161,9 @@ async function main() {
 			of(getValue(slider)),
 			fromEvent(slider, "input").pipe(map(extractPosition)),
 		);
-
+	const rot$ = animationFrames().pipe(
+		map(({ elapsed }) => (elapsed * 0.05) % 360),
+	);
 	const initialState = {
 		x: getValue(sliderX),
 		y: getValue(sliderY),
@@ -79,7 +171,7 @@ async function main() {
 		scale: getValue(sliderScale),
 	};
 	const x$ = fromSlider(sliderX).pipe(map(toDeg));
-	const y$ = fromSlider(sliderY).pipe(map(toDeg));
+	const y$ = rot$; // fromSlider(sliderY).pipe(map(toDeg));
 	const z$ = fromSlider(sliderZ).pipe(map(toDeg));
 	const scale$ = fromSlider(sliderScale).pipe(map(toScale));
 
