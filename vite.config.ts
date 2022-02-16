@@ -15,4 +15,7 @@ export default defineConfig({
 		target: "modules",
 		assetsInlineLimit: 0,
 	},
+	json: {
+		stringify: true,
+	},
 });
